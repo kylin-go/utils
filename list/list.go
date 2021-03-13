@@ -16,5 +16,5 @@ func ListIn(list interface{}, element interface{}) (bool, error) {
 		}
 		return false, nil
 	}
-	return false, errors.New("list data type error，is not \"selic \"or \"array\"")
+	return false, errors.New("list data type error，is not \"slice \"or \"array\"")
 }
