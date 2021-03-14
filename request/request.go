@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	url2 "net/url"
 	"strings"
 	"time"
 )
@@ -78,7 +79,7 @@ func Request(method, url string, reqData interface{}, headers, params map[string
 			for k, v := range params {
 				args = append(args, k+"="+v)
 			}
-			url = url + "?" + strings.Join(args, "&")
+			url = url + "?" + url2.QueryEscape(strings.Join(args, "&"))
 		}
 	}
 	if reqData == nil {
