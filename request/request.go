@@ -1,6 +1,7 @@
 package request
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -9,6 +10,8 @@ import (
 	"net"
 	"net/http"
 	url2 "net/url"
+	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -124,4 +127,44 @@ func Put(url string, reqData interface{}, headers, params map[string]string, tim
 
 func Delete(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration) *Response {
 	return Request("delete", url, reqData, headers, params, timeout)
+}
+
+func DownloadFile(url, toDir string, timeout time.Duration) error {
+	var err error
+	var winSize = 1024 * 10
+	var f = path.Base(url)
+	var p = path.Join(toDir, f)
+
+	client := getClient(timeout)
+	req, err := client.Get(url)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = req.Body.Close() }()
+	reader := bufio.NewReaderSize(req.Body, winSize)
+	file, err := os.Create(p)
+	if err != nil {
+		return err
+	}
+	writer := bufio.NewWriter(file)
+	buff := make([]byte, winSize)
+	if req.StatusCode != 200 {
+		return errors.New(fmt.Sprintf("下载的文件%s不存在，下载失败", url))
+	}
+	for {
+		nr, err := reader.Read(buff)
+		if nr > 0 {
+			nw, err := writer.Write(buff[0:nr])
+			if err != nil {
+				break
+			}
+			if nr != nw {
+				break
+			}
+		}
+		if err != nil {
+			break
+		}
+	}
+	return err
 }
