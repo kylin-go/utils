@@ -71,6 +71,8 @@ func getClient(timeout time.Duration) http.Client {
 
 // header 默认添加{"Content-Type": "application/json" }
 func Request(method, url string, reqData interface{}, headers, params map[string]string, timeout time.Duration) *Response {
+	var req *http.Request
+	var err error
 	method = strings.ToUpper(method)
 	methods := map[string]bool{"GET": true, "POST": true, "DELETE": true, "PUT": true, "PATCH": true}
 	if _, ok := methods[method]; ok == false {
@@ -85,11 +87,12 @@ func Request(method, url string, reqData interface{}, headers, params map[string
 			url = url + "?" + url2.QueryEscape(strings.Join(args, "&"))
 		}
 	}
-	if reqData == nil {
-		reqData = &[]byte{}
+	if reqData != nil {
+		reqData1, _ := json.Marshal(reqData)
+		req, err = http.NewRequest(method, url, bytes.NewReader(reqData1))
+	} else {
+		req, err = http.NewRequest(method, url, nil)
 	}
-	reqData1, _ := json.Marshal(reqData)
-	req, err := http.NewRequest(method, url, bytes.NewReader(reqData1))
 	if err != nil {
 		return &Response{[]byte{}, 0, err}
 	}
