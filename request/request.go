@@ -70,11 +70,11 @@ func getClient(timeout time.Duration) http.Client {
 }
 
 // header 默认添加{"Content-Type": "application/json" }
-func Request(method, url string, reqData interface{}, headers, params map[string]string, timeout time.Duration) *Response {
+func Request(method, url string, reqData interface{}, headers, params map[string]string, timeout time.Duration, username, password string) *Response {
 	var req *http.Request
 	var err error
 	method = strings.ToUpper(method)
-	methods := map[string]bool{"GET": true, "POST": true, "DELETE": true, "PUT": true, "PATCH": true}
+	methods := map[string]bool{"GET": true, "POST": true, "DELETE": true, "PUT": true, "PATCH": true, "HEAD": true}
 	if _, ok := methods[method]; ok == false {
 		return &Response{[]byte{}, 0, errors.New(fmt.Sprintf("http method 错误，不支持%s", method))}
 	}
@@ -102,7 +102,9 @@ func Request(method, url string, reqData interface{}, headers, params map[string
 			req.Header.Add(k, v)
 		}
 	}
-
+	if username != "" && password != "" {
+		req.SetBasicAuth(username, password)
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return &Response{[]byte{}, 0, err}
@@ -116,20 +118,40 @@ func Request(method, url string, reqData interface{}, headers, params map[string
 	return &Response{bodyData, resp.StatusCode, nil}
 }
 
+func Head(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration) *Response {
+	return Request("head", url, reqData, headers, params, timeout, "", "")
+}
+
 func Get(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration) *Response {
-	return Request("get", url, reqData, headers, params, timeout)
+	return Request("get", url, reqData, headers, params, timeout, "", "")
+}
+
+func GetBaseAuth(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration, username, password string) *Response {
+	return Request("get", url, reqData, headers, params, timeout, username, password)
 }
 
 func Post(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration) *Response {
-	return Request("post", url, reqData, headers, params, timeout)
+	return Request("post", url, reqData, headers, params, timeout, "", "")
+}
+
+func PostBaseAuth(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration, username, password string) *Response {
+	return Request("post", url, reqData, headers, params, timeout, username, password)
 }
 
 func Put(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration) *Response {
-	return Request("put", url, reqData, headers, params, timeout)
+	return Request("put", url, reqData, headers, params, timeout, "", "")
+}
+
+func PutBaseAuth(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration, username, password string) *Response {
+	return Request("put", url, reqData, headers, params, timeout, username, password)
 }
 
 func Delete(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration) *Response {
-	return Request("delete", url, reqData, headers, params, timeout)
+	return Request("delete", url, reqData, headers, params, timeout, "", "")
+}
+
+func DeleteBaseAuth(url string, reqData interface{}, headers, params map[string]string, timeout time.Duration, username, password string) *Response {
+	return Request("delete", url, reqData, headers, params, timeout, username, password)
 }
 
 func DownloadFile(url, toDir string, timeout time.Duration) error {

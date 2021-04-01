@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"utils/elasticsearch/docs"
 	"utils/request"
 )
 
@@ -54,32 +55,31 @@ func (e *ES) IndexCreate(indexName string, shardNum, replicaNum int) error {
 	return esErr(resp)
 }
 
-func (e *ES) DocsInsertUpdate(indexName string, id interface{}, data interface{}) error {
-	addr := fmt.Sprintf("%s://%s:%d/%s/_doc", e.Schema, e.ServerAddr, e.ServerPort, indexName)
-	if !(id == "" || id == nil) {
-		addr = fmt.Sprintf("%s/%v", addr, id)
-	}
-	resp := request.Post(addr, data, headers, nil, timeout)
-	return esErr(resp)
+// 插入与覆盖文档
+func (e *ES) DocsInsert(indexName, id string, data interface{}) *docs.InsertRespReturn {
+	return docs.Insert(e.Schema, e.ServerAddr, e.ServerPort, indexName, id, data)
 }
 
-func (e *ES) DocsDelete(indexName, id string) error {
-	if id == "" {
-		return errors.New("id参数不能为空")
-	}
-	addr := fmt.Sprintf("%s://%s:%d/%s/_doc/%s", e.Schema, e.ServerAddr, e.ServerPort, indexName, id)
-	resp := request.Delete(addr, nil, headers, nil, timeout)
-	return esErr(resp)
+// 局部跟新文档
+func (e *ES) DocsUpdate(indexName, id string, data interface{}) *docs.InsertRespReturn {
+	return docs.Update(e.Schema, e.ServerAddr, e.ServerPort, indexName, id, data)
 }
 
-func (e *ES) DocsGet(indexName, id string, responseBody interface{}) error {
-	if id == "" {
-		return errors.New("id参数不能为空")
-	}
-	addr := fmt.Sprintf("%s://%s:%d/%s/_doc/%s", e.Schema, e.ServerAddr, e.ServerPort, indexName, id)
-	resp := request.Get(addr, nil, headers, nil, timeout)
-	if err := resp.Json(&responseBody); err != nil {
-		return err
-	}
-	return esErr(resp)
+// 删除文档
+func (e *ES) DocsDelete(indexName, id string) *docs.InsertRespReturn {
+	return docs.Delete(e.Schema, e.ServerAddr, e.ServerPort, indexName, id)
+}
+
+// 按照ID获取文档
+func (e *ES) DocsGet(indexName, id string, respData interface{}) error {
+	return docs.Get(e.Schema, e.ServerAddr, e.ServerPort, indexName, id, respData)
+}
+
+// 根据文档ID查询是否存在
+func (e *ES) DocsExist(indexName, id string) (bool, error) {
+	return docs.IsExist(e.Schema, e.ServerAddr, e.ServerPort, indexName, id)
+}
+
+func (e *ES) DocsSearch(indexName, dsl string, result interface{}) error {
+	return docs.Search(e.Schema, e.ServerAddr, e.ServerPort, indexName, dsl, result)
 }
